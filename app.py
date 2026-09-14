@@ -55,6 +55,31 @@ QUESTIONS = [
         "text": "What is the best sport?",
         "type": "text",
     },
+    {
+        "key": "body_part_live_without",
+        "text": "Name a part of your body that you could live without",
+        "type": "text",
+    },
+    {
+        "key": "time_received_present",
+        "text": "Name a time when you received a present",
+        "type": "text",
+    },
+    {
+        "key": "tallest_guess",
+        "text": "Who in this class is the tallest do you think (without checking)",
+        "type": "text",
+    },
+    {
+        "key": "shortest_guess",
+        "text": "Who in this class is the shortest do you think (without checking)",
+        "type": "text",
+    },
+    {
+        "key": "best_board_game",
+        "text": "What is the best family board game",
+        "type": "text",
+    },
 ]
 
 _PUNCT_TABLE = str.maketrans("", "", string.punctuation)
@@ -184,16 +209,18 @@ if show_results:
         st.markdown(f"**{q['text']}**")
         if total == 0:
             st.caption("No answers yet.")
-            continue
+        else:
+            for option, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
+                if count == 0:
+                    continue
+                label = option.title() if q["type"] == "text" else option
+                pct = round(count / total * 100)
+                is_your_answer = user_keyed.get(q["key"]) == option
+                text = f"**{label} (YOUR ANSWER)**" if is_your_answer else label
+                st.progress(pct / 100, text=text)
 
-        for option, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
-            if count == 0:
-                continue
-            label = option.title() if q["type"] == "text" else option
-            pct = round(count / total * 100)
-            is_your_answer = user_keyed.get(q["key"]) == option
-            text = f"**{label} (your answer)** ⬅️" if is_your_answer else label
-            st.progress(pct / 100, text=text)
+        st.write("")
+        st.divider()
 
     st.caption(f"Total votes: {data['total_votes']}")
 
