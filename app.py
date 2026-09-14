@@ -159,9 +159,11 @@ st.title("Poll Time")
 
 data = load_data()
 
-if st.session_state.get("submitted"):
-    show_results = True
-else:
+# Stored in the URL (not just session state) so reloading the page keeps
+# showing results instead of sending you back to the quiz.
+show_results = "done" in st.query_params
+
+if not show_results:
     st.subheader("Questions")
     answers = {}
     for q in QUESTIONS:
@@ -169,10 +171,8 @@ else:
 
     if st.button("Submit answers"):
         st.session_state["wins"] = record_vote(answers)
-        st.session_state["submitted"] = True
+        st.query_params["done"] = "1"
         st.rerun()
-
-    show_results = False
 
 if show_results:
     st.divider()
@@ -217,3 +217,7 @@ if show_results:
             st.bar_chart(chart_df)
 
     st.caption(f"Total votes: {data['total_votes']}")
+
+    if st.button("Vote again"):
+        del st.query_params["done"]
+        st.rerun()
