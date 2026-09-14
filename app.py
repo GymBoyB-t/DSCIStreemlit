@@ -123,9 +123,8 @@ def render_question(q):
     if q["type"] == "choice":
         return st.radio(q["text"], q["options"], horizontal=True, key=q["key"])
     if q["type"] == "number":
-        default = (q["min"] + q["max"]) // 2
         return st.number_input(
-            q["text"], min_value=q["min"], max_value=q["max"], value=default, step=1, key=q["key"]
+            q["text"], min_value=q["min"], max_value=q["max"], value=None, step=1, key=q["key"]
         )
 
 
@@ -190,7 +189,12 @@ if not show_results:
         answers[q["key"]] = render_question(q)
 
     if st.button("Submit answers"):
-        missing = [q["text"] for q in QUESTIONS if q["type"] == "text" and not answers[q["key"]].strip()]
+        missing = [
+            q["text"]
+            for q in QUESTIONS
+            if (q["type"] == "text" and not answers[q["key"]].strip())
+            or (q["type"] == "number" and answers[q["key"]] is None)
+        ]
         if missing:
             st.error("Please answer: " + ", ".join(missing))
         else:
