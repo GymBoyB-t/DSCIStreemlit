@@ -191,7 +191,9 @@ if show_results:
                 continue
             label = option.title() if q["type"] == "text" else option
             pct = round(count / total * 100)
-            st.progress(pct / 100, text=f"{label}: {pct}%  ({count})")
+            is_your_answer = user_keyed.get(q["key"]) == option
+            text = f"**{label} (your answer)** ⬅️" if is_your_answer else label
+            st.progress(pct / 100, text=text)
 
     st.caption(f"Total votes: {data['total_votes']}")
 
