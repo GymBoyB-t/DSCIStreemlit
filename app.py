@@ -1,11 +1,16 @@
 import json
 import os
+import threading
 
 import numpy as np
 import pandas as pd
 import streamlit as st
 
 DATA_FILE = "totals.json"
+
+# Guards read-modify-write access to DATA_FILE so two people submitting at
+# the same time can't clobber each other's counts (lost-update race).
+_data_lock = threading.Lock()
 
 # Edit this list to change the questions.
 # type: "yesno" | "choice" | "scale" | "number"
@@ -83,10 +88,10 @@ def load_data():
     else:
         data = {}
 
-    # Fill in any missing questions/voters so the file stays easy to hand-edit.
+    # Fill in any missing questions so the file stays easy to hand-edit.
     for q in QUESTIONS:
         data.setdefault(q["key"], default_counts(q))
-    data.setdefault("voters", [])
+    data.setdefault("total_votes", 0)
     return data
 
 
@@ -123,6 +128,32 @@ def smooth(values, sigma=4.0):
     return np.convolve(padded, kernel, mode="valid")
 
 
+def record_vote(answers):
+    """Compute win results and persist one submission. Thread-safe."""
+    with _data_lock:
+        # Re-read fresh so we never overwrite votes saved by someone
+        # else while this session was busy answering questions.
+        data = load_data()
+
+        wins = {}
+        for q in QUESTIONS:
+            if q["type"] == "number":
+                counts = data[q["key"]]
+                vals = list(counts.values())
+                target = min(vals) if q["win_rule"] == "least" else max(vals)
+                winners = {k for k, v in counts.items() if v == target}
+                wins[q["key"]] = str(answers[q["key"]]) in winners
+
+        for q in QUESTIONS:
+            key = counts_key_for(q, answers[q["key"]])
+            data[q["key"]][key] = data[q["key"]].get(key, 0) + 1
+
+        data["total_votes"] += 1
+        save_data(data)
+
+    return wins
+
+
 st.set_page_config(page_title="Yes/No Poll", page_icon="\U0001F5F3️")
 st.title("Poll Time")
 
@@ -137,22 +168,7 @@ else:
         answers[q["key"]] = render_question(q)
 
     if st.button("Submit answers"):
-        wins = {}
-        for q in QUESTIONS:
-            if q["type"] == "number":
-                counts = data[q["key"]]
-                vals = list(counts.values())
-                target = min(vals) if q["win_rule"] == "least" else max(vals)
-                winners = {k for k, v in counts.items() if v == target}
-                wins[q["key"]] = str(answers[q["key"]]) in winners
-
-        for q in QUESTIONS:
-            key = counts_key_for(q, answers[q["key"]])
-            data[q["key"]][key] = data[q["key"]].get(key, 0) + 1
-
-        data["voters"].append(True)
-        save_data(data)
-        st.session_state["wins"] = wins
+        st.session_state["wins"] = record_vote(answers)
         st.session_state["submitted"] = True
         st.rerun()
 
@@ -200,4 +216,4 @@ if show_results:
             chart_df = pd.DataFrame({"number": xs, "picks": [counts[str(x)] for x in xs]}).set_index("number")
             st.bar_chart(chart_df)
 
-    st.caption(f"Total voters: {len(data['voters'])}")
+    st.caption(f"Total votes: {data['total_votes']}")
