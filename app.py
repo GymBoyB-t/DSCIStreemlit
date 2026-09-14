@@ -17,7 +17,7 @@ DATA_FILE = "totals.json"
 QUESTIONS = [
     {
         "key": "chicken_road",
-        "text": "Why did the chicken cross the road? (yes or no, your call)",
+        "text": "Why did the chicken cross the road? :D",
         "type": "yesno",
     },
     {
@@ -128,15 +128,9 @@ st.title("Poll Time")
 
 data = load_data()
 
-st.subheader("Login")
-name = st.text_input("Enter your name to take the quiz")
-
-already_voted = name.strip().lower() in [v.lower() for v in data["voters"]] if name.strip() else False
-
-if name.strip() and already_voted:
-    st.info(f"Looks like **{name}** already took the quiz. Thanks for participating!")
+if st.session_state.get("submitted"):
     show_results = True
-elif name.strip():
+else:
     st.subheader("Questions")
     answers = {}
     for q in QUESTIONS:
@@ -156,14 +150,12 @@ elif name.strip():
             key = counts_key_for(q, answers[q["key"]])
             data[q["key"]][key] = data[q["key"]].get(key, 0) + 1
 
-        data["voters"].append(name.strip())
+        data["voters"].append(True)
         save_data(data)
         st.session_state["wins"] = wins
+        st.session_state["submitted"] = True
         st.rerun()
 
-    show_results = False
-else:
-    st.caption("Enter your name above to answer the questions.")
     show_results = False
 
 if show_results:
