@@ -18,7 +18,6 @@ _data_lock = threading.Lock()
 # - choice: pick one of `options`
 # - scale:  slider from `min` to `max`
 # - number: pick a whole number from `min` to `max`
-# `bias` pre-loads fake votes into the totals (the joke part).
 QUESTIONS = [
     {
         "key": "chicken_road",
@@ -31,7 +30,6 @@ QUESTIONS = [
         "type": "scale",
         "min": 1,
         "max": 100,
-        "bias": {"100": 10000},
         "show_distribution": True,
     },
     {
@@ -49,7 +47,6 @@ QUESTIONS = [
         "key": "government_corrupt",
         "text": "Is our government corrupt?",
         "type": "yesno",
-        "bias": {"no": 10000},
     },
     {
         "key": "number_least",
@@ -72,13 +69,10 @@ QUESTIONS = [
 
 def default_counts(q):
     if q["type"] == "yesno":
-        counts = {"yes": 0, "no": 0}
-    elif q["type"] == "choice":
-        counts = {opt: 0 for opt in q["options"]}
-    else:  # scale or number
-        counts = {str(i): 0 for i in range(q["min"], q["max"] + 1)}
-    counts.update(q.get("bias", {}))
-    return counts
+        return {"yes": 0, "no": 0}
+    if q["type"] == "choice":
+        return {opt: 0 for opt in q["options"]}
+    return {str(i): 0 for i in range(q["min"], q["max"] + 1)}  # scale or number
 
 
 def load_data():
