@@ -1,0 +1,25 @@
+{
+  "pineapple_pizza": {
+    "yes": 0,
+    "no": 1
+  },
+  "morning_person": {
+    "yes": 0,
+    "no": 1
+  },
+  "cats_over_dogs": {
+    "yes": 0,
+    "no": 1
+  },
+  "hot_dog_sandwich": {
+    "yes": 0,
+    "no": 1
+  },
+  "toilet_paper_over": {
+    "yes": 0,
+    "no": 1
+  },
+  "voters": [
+    "Troy"
+  ]
+}
